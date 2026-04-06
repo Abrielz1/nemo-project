@@ -1,0 +1,29 @@
+syntax = "proto3";
+option java_package = "ru.nemo_project.hr.grpc";
+option java_multiple_files = true;
+
+import "google/protobuf/empty.proto";
+message CreateBalanceRequest {
+  string employee_id = 1;
+  int32 initial_hours = 2;
+}
+message OvertimeBalance {
+  string employee_id = 1;
+  int32 hours_accumulated = 2;
+}
+message GetBalanceRequest {
+  string employee_id = 1;
+}
+message UpdateBalanceRequest {
+  string employee_id = 1;
+  optional int32 hours_to_change = 2;
+}
+message DeleteBalanceRequest {
+  string employee_id = 1;
+}
+service OvertimeBalanceService {
+  rpc GetBalance(GetBalanceRequest) returns (OvertimeBalance);
+  rpc CreateBalance(CreateBalanceRequest) returns (OvertimeBalance);
+  rpc UpdateBalance(UpdateBalanceRequest) returns (OvertimeBalance);
+  rpc DeleteBalance(DeleteBalanceRequest) returns (google.protobuf.Empty);
+}
