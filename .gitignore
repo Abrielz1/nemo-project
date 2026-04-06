@@ -88,3 +88,6 @@ secrets/
 /docker/postgres-data/
 /docker/redis-data/
 /docker/kafka-data/
+/.mvn/wrapper/maven-wrapper.properties
+/mvnw
+/mvnw.cmd
