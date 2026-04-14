@@ -1,5 +1,6 @@
 package ru.nemo_project.nemo_project.repository.impl;
 
+import io.grpc.Status;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import ru.nemo_project.hr.grpc.CreateBalanceRequest;
@@ -14,7 +15,9 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Repository
 @RequiredArgsConstructor
@@ -24,7 +27,10 @@ public class OverTimeRepositoryDAOImpl implements OverTimeRepositoryDAO {
 
     private final Map<String, EmployeeData> repository = new ConcurrentHashMap<>();
 
-    private record State(long id, long version) {}
+    private final Map<String, ReentrantLock> locks = new ConcurrentHashMap<>();
+
+    private record State(long id, long version) {
+    }
 
     private final AtomicReference<State> counter = new AtomicReference<>(new State(1L, 0L));
 
@@ -37,8 +43,8 @@ public class OverTimeRepositoryDAOImpl implements OverTimeRepositoryDAO {
     @Override
     public BalanceDTO createBalance(CreateBalanceRequest request) {
 
-       State nextState = counter.updateAndGet(s -> new State(s.id() + 1, s.version() + 1));
-        long id= nextState.id();
+        State nextState = counter.updateAndGet(s -> new State(s.id() + 1, s.version() + 1));
+        long id = nextState.id();
 
         var newBalance = this.mapper.fromCreateBalanceRequestDto(request);
 
@@ -46,16 +52,51 @@ public class OverTimeRepositoryDAOImpl implements OverTimeRepositoryDAO {
         newBalance.setVersion(0L);
         newBalance.setUpdatedAt(Instant.now());
         this.repository.put(newBalance.getEmployeeId().toString(), newBalance);
-      return this.mapper.fromEmployeeDats(newBalance);
+        return this.mapper.fromEmployeeDats(newBalance);
     }
 
     @Override
     public BalanceDTO updateBalance(UpdateBalanceRequest request) {
 
-        var currentBalance = this.repository.get(request.getEmployeeId());
-       currentBalance.setOvertimeMinutesAccumulated(new BigDecimal(request.getMinutesToChange()));
-        this.repository.put(request.getEmployeeId(), currentBalance);
-        return this.mapper.fromEmployeeDats(currentBalance);
+        String empId = request.getEmployeeId();
+        int attempts = 0;
+        ReentrantLock userLock = locks.computeIfAbsent(empId, k -> new ReentrantLock());
+
+        while (attempts < 3) {
+
+            try {
+
+                if (userLock.tryLock(50, TimeUnit.MILLISECONDS)) {
+
+                    try {
+
+                        var currentBalance = this.repository.get(request.getEmployeeId());
+
+                        if (currentBalance == null) {
+
+                            throw new IllegalArgumentException("");
+                        }
+
+                        currentBalance.setOvertimeMinutesAccumulated(new BigDecimal(request.getMinutesToChange()));
+                        this.repository.put(request.getEmployeeId(), currentBalance);
+                        return this.mapper.fromEmployeeDats(currentBalance);
+
+                    } finally {
+                        userLock.unlock();
+                    }
+
+                } else {
+                    attempts++;
+                    Thread.sleep(100 * attempts);
+                }
+
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Thread was interrupted", e);
+            }
+        }
+
+        throw Status.ABORTED.withDescription("Could not acquire lock for update, system is busy").asRuntimeException();
     }
 
     @Override
