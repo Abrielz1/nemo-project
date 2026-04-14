@@ -1,4 +1,4 @@
-package ru.nemo_project.controller;
+package ru.nemo_project.nemo_project.controller;
 
 import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
@@ -11,11 +11,14 @@ import ru.nemo_project.hr.grpc.GetBalanceRequest;
 import ru.nemo_project.hr.grpc.OvertimeBalance;
 import ru.nemo_project.hr.grpc.OvertimeBalanceServiceGrpc;
 import ru.nemo_project.hr.grpc.UpdateBalanceRequest;
+import ru.nemo_project.nemo_project.repository.OverTimeRepositoryDAO;
 
 @Slf4j
 @GrpcService
 @RequiredArgsConstructor
 public class OvertimeBalanceServiceImpl extends OvertimeBalanceServiceGrpc.OvertimeBalanceServiceImplBase {
+
+    private final OverTimeRepositoryDAO overTimeRepositoryDAO;
 
     @Override
     public void getBalance(GetBalanceRequest request, StreamObserver<OvertimeBalance> responseObserver) {

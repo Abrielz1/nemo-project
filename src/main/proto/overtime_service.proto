@@ -9,7 +9,7 @@ message CreateBalanceRequest {
 }
 message OvertimeBalance {
   string employee_id = 1;
-  int64 minutes_accumulated = 2;
+  string  minutes_accumulated = 2;
 }
 message GetBalanceRequest {
   string employee_id = 1;

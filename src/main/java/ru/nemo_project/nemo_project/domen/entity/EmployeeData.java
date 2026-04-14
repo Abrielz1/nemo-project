@@ -1,4 +1,4 @@
-package ru.nemo_project.domen.entity;
+package ru.nemo_project.nemo_project.domen.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

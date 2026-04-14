@@ -1,4 +1,4 @@
-package ru.nemo_project.util;
+package ru.nemo_project.nemo_project.util;
 
 import io.grpc.Status;
 import org.springframework.stereotype.Component;
