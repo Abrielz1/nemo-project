@@ -1,19 +1,18 @@
 package ru.nemo_project.nemo_project.repository.impl;
 
-import io.grpc.Status;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
-import ru.nemo_project.hr.grpc.CreateBalanceRequest;
-import ru.nemo_project.hr.grpc.DeleteBalanceRequest;
-import ru.nemo_project.hr.grpc.GetBalanceRequest;
-import ru.nemo_project.hr.grpc.UpdateBalanceRequest;
 import ru.nemo_project.nemo_project.domen.entity.EmployeeData;
 import ru.nemo_project.nemo_project.domen.model.BalanceDTO;
+import ru.nemo_project.nemo_project.domen.model.CreateBalanceRequestDTO;
+import ru.nemo_project.nemo_project.domen.model.DeleteBalanceRequestDTO;
+import ru.nemo_project.nemo_project.domen.model.GetBalanceRequestDTO;
+import ru.nemo_project.nemo_project.domen.model.UpdateBalanceRequestDTO;
 import ru.nemo_project.nemo_project.repository.OverTimeRepositoryDAO;
 import ru.nemo_project.nemo_project.util.Mapper;
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -25,9 +24,9 @@ public class OverTimeRepositoryDAOImpl implements OverTimeRepositoryDAO {
 
     private final Mapper mapper;
 
-    private final Map<String, EmployeeData> repository = new ConcurrentHashMap<>();
+    private final Map<UUID, EmployeeData> repository = new ConcurrentHashMap<>();
 
-    private final Map<String, ReentrantLock> locks = new ConcurrentHashMap<>();
+    private final Map<UUID, ReentrantLock> locks = new ConcurrentHashMap<>();
 
     private record State(long id, long version) {
     }
@@ -35,13 +34,16 @@ public class OverTimeRepositoryDAOImpl implements OverTimeRepositoryDAO {
     private final AtomicReference<State> counter = new AtomicReference<>(new State(1L, 0L));
 
     @Override
-    public BalanceDTO getBalance(GetBalanceRequest request) {
+    public BalanceDTO getBalance(GetBalanceRequestDTO request) {
+       if (request.employeeId() == null) {
+           throw new IllegalArgumentException("");
+       }
 
-        return this.mapper.fromEmployeeDats(this.repository.get(request.getEmployeeId()));
+        return this.mapper.fromEmployeeDats(this.repository.getOrDefault(request.employeeId(), EmployeeData.builder().build()));
     }
 
     @Override
-    public BalanceDTO createBalance(CreateBalanceRequest request) {
+    public BalanceDTO createBalance(CreateBalanceRequestDTO request) {
 
         State nextState = counter.updateAndGet(s -> new State(s.id() + 1, s.version() + 1));
         long id = nextState.id();
@@ -51,14 +53,19 @@ public class OverTimeRepositoryDAOImpl implements OverTimeRepositoryDAO {
         newBalance.setId(id);
         newBalance.setVersion(0L);
         newBalance.setUpdatedAt(Instant.now());
-        this.repository.put(newBalance.getEmployeeId().toString(), newBalance);
+
+        if (this.repository.putIfAbsent(request.employeeId(), newBalance) != null) {
+            throw new IllegalStateException("Balance already exists!");
+        }
+
         return this.mapper.fromEmployeeDats(newBalance);
     }
 
     @Override
-    public BalanceDTO updateBalance(UpdateBalanceRequest request) {
+    public BalanceDTO updateBalance(UpdateBalanceRequestDTO request) {
 
-        String empId = request.getEmployeeId();
+        var empId = request.employeeId();
+        var minutesDelta = request.minutesToChange();
         int attempts = 0;
         ReentrantLock userLock = locks.computeIfAbsent(empId, k -> new ReentrantLock());
 
@@ -70,15 +77,16 @@ public class OverTimeRepositoryDAOImpl implements OverTimeRepositoryDAO {
 
                     try {
 
-                        var currentBalance = this.repository.get(request.getEmployeeId());
+                        var currentBalance = this.repository.get(empId);
 
                         if (currentBalance == null) {
 
                             throw new IllegalArgumentException("");
                         }
 
-                        currentBalance.setOvertimeMinutesAccumulated(new BigDecimal(request.getMinutesToChange()));
-                        this.repository.put(request.getEmployeeId(), currentBalance);
+                        var currentMinutes = currentBalance.getOvertimeMinutesAccumulated();
+                        currentBalance.setOvertimeMinutesAccumulated(currentMinutes.add(minutesDelta));
+                        this.repository.put(empId, currentBalance);
                         return this.mapper.fromEmployeeDats(currentBalance);
 
                     } finally {
@@ -87,7 +95,7 @@ public class OverTimeRepositoryDAOImpl implements OverTimeRepositoryDAO {
 
                 } else {
                     attempts++;
-                    Thread.sleep(100 * attempts);
+                    Thread.sleep(100L * attempts);
                 }
 
             } catch (InterruptedException e) {
@@ -96,17 +104,12 @@ public class OverTimeRepositoryDAOImpl implements OverTimeRepositoryDAO {
             }
         }
 
-        throw Status.ABORTED.withDescription("Could not acquire lock for update, system is busy").asRuntimeException();
+        throw new RuntimeException("Could not acquire lock for update, system is busy");
     }
 
     @Override
-    public boolean deleteBalance(DeleteBalanceRequest request) {
+    public boolean deleteBalance(DeleteBalanceRequestDTO request) {
 
-        if (this.repository.containsKey(request.getEmployeeId())) {
-            this.repository.remove(request.getEmployeeId());
-            return true;
-        }
-
-        return false;
+        return this.repository.remove(request.employeeId()) != null;
     }
 }

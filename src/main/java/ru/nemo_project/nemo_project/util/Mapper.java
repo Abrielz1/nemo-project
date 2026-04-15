@@ -7,6 +7,8 @@ import ru.nemo_project.hr.grpc.CreateBalanceRequest;
 import ru.nemo_project.hr.grpc.OvertimeBalance;
 import ru.nemo_project.hr.grpc.UpdateBalanceRequest;
 import ru.nemo_project.nemo_project.domen.model.BalanceDTO;
+import ru.nemo_project.nemo_project.domen.model.CreateBalanceRequestDTO;
+
 import java.math.BigDecimal;
 
 @Component
@@ -70,11 +72,11 @@ public class Mapper {
         return employeeData;
     }
 
-    public EmployeeData fromCreateBalanceRequestDto(CreateBalanceRequest request) {
+    public EmployeeData fromCreateBalanceRequestDto(CreateBalanceRequestDTO request) {
 
        return EmployeeData.builder()
-                .employeeId(this.parserUUID.parseUUIDFromGRPC(request.getEmployeeId()))
-                .overtimeMinutesAccumulated(new BigDecimal(request.getInitialMinutes()))
+                .employeeId(this.parserUUID.parseUUIDFromGRPC(request.employeeId()))
+                .overtimeMinutesAccumulated(new BigDecimal(request.initialMinutes()))
                 .build();
     }
 

@@ -1,18 +1,18 @@
 package ru.nemo_project.nemo_project.repository;
 
-import ru.nemo_project.hr.grpc.CreateBalanceRequest;
-import ru.nemo_project.hr.grpc.DeleteBalanceRequest;
-import ru.nemo_project.hr.grpc.GetBalanceRequest;
-import ru.nemo_project.hr.grpc.UpdateBalanceRequest;
 import ru.nemo_project.nemo_project.domen.model.BalanceDTO;
+import ru.nemo_project.nemo_project.domen.model.CreateBalanceRequestDTO;
+import ru.nemo_project.nemo_project.domen.model.DeleteBalanceRequestDTO;
+import ru.nemo_project.nemo_project.domen.model.GetBalanceRequestDTO;
+import ru.nemo_project.nemo_project.domen.model.UpdateBalanceRequestDTO;
 
 public interface OverTimeRepositoryDAO {
 
-    BalanceDTO getBalance(GetBalanceRequest request);
+    BalanceDTO getBalance(GetBalanceRequestDTO request);
 
-    BalanceDTO createBalance(CreateBalanceRequest request);
+    BalanceDTO createBalance(CreateBalanceRequestDTO request);
 
-    BalanceDTO updateBalance(UpdateBalanceRequest request);
+    BalanceDTO updateBalance(UpdateBalanceRequestDTO request);
 
-    boolean deleteBalance(DeleteBalanceRequest request);
+    boolean deleteBalance(DeleteBalanceRequestDTO request);
 }
