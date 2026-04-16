@@ -76,7 +76,7 @@ public class OvertimeBalanceServiceImpl extends OvertimeBalanceServiceGrpc.Overt
             return;
         }
 
-        var grpcResponse = this.mapper.toOvertimeBalanceDto(response)фдд вщту;
+        var grpcResponse = this.mapper.toOvertimeBalanceDto(response);
 
         responseObserver.onNext(grpcResponse);
         responseObserver.onCompleted();
