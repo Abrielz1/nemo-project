@@ -16,7 +16,7 @@ message GetBalanceRequest {
 }
 message UpdateBalanceRequest {
   string employee_id = 1;
-  optional int64 minutes_to_change = 2;
+  optional string minutes_to_change = 2;
 }
 message DeleteBalanceRequest {
   string employee_id = 1;

@@ -10,9 +10,9 @@ public interface OvertimeFacade {
 
     BalanceDTO getBalance(GetBalanceRequest request);
 
-    void createBalance(CreateBalanceRequest request);
+    BalanceDTO createBalance(CreateBalanceRequest request);
 
-    void updateBalance(UpdateBalanceRequest request);
+    BalanceDTO updateBalance(UpdateBalanceRequest request);
 
-    void deleteBalance(DeleteBalanceRequest request);
+    boolean deleteBalance(DeleteBalanceRequest request);
 }

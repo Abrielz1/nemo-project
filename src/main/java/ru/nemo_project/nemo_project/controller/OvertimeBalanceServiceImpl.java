@@ -12,6 +12,7 @@ import ru.nemo_project.hr.grpc.OvertimeBalance;
 import ru.nemo_project.hr.grpc.OvertimeBalanceServiceGrpc;
 import ru.nemo_project.hr.grpc.UpdateBalanceRequest;
 import ru.nemo_project.nemo_project.service.facade.OvertimeFacade;
+import ru.nemo_project.nemo_project.util.Validator;
 
 @Slf4j
 @GrpcService
@@ -20,9 +21,20 @@ public class OvertimeBalanceServiceImpl extends OvertimeBalanceServiceGrpc.Overt
 
     private final OvertimeFacade overtimeFacade;
 
+    private final Validator validator;
+
     @Override
     public void getBalance(GetBalanceRequest request, StreamObserver<OvertimeBalance> responseObserver) {
-        super.getBalance(request, responseObserver);
+
+        if (this.validator.uuidValidator(request.getEmployeeId())) {
+            throw new IllegalArgumentException("");
+        }
+
+       var response = this.overtimeFacade.getBalance(request);
+
+        if (this.validator.balanceAmountValidator(response.overtimeMinutesAccumulated())) {
+            throw new IllegalArgumentException("");
+        }
     }
 
     @Override

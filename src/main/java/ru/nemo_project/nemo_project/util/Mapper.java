@@ -2,14 +2,21 @@ package ru.nemo_project.nemo_project.util;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import ru.nemo_project.nemo_project.domen.entity.EmployeeData;
+import org.springframework.util.StringUtils;
 import ru.nemo_project.hr.grpc.CreateBalanceRequest;
+import ru.nemo_project.hr.grpc.DeleteBalanceRequest;
+import ru.nemo_project.hr.grpc.GetBalanceRequest;
+import ru.nemo_project.nemo_project.domen.entity.EmployeeData;
 import ru.nemo_project.hr.grpc.OvertimeBalance;
 import ru.nemo_project.hr.grpc.UpdateBalanceRequest;
 import ru.nemo_project.nemo_project.domen.model.BalanceDTO;
 import ru.nemo_project.nemo_project.domen.model.CreateBalanceRequestDTO;
+import ru.nemo_project.nemo_project.domen.model.DeleteBalanceRequestDTO;
+import ru.nemo_project.nemo_project.domen.model.GetBalanceRequestDTO;
+import ru.nemo_project.nemo_project.domen.model.UpdateBalanceRequestDTO;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -56,7 +63,7 @@ public class Mapper {
 
     public EmployeeData fromUpdateBalanceRequestDto(EmployeeData employeeData, UpdateBalanceRequest updateBalanceRequest) {
 
-        if (updateBalanceRequest.getMinutesToChange()== 0l) {
+        if (!StringUtils.hasText(updateBalanceRequest.getMinutesToChange())) {
             return employeeData;
         }
 
@@ -75,13 +82,33 @@ public class Mapper {
     public EmployeeData fromCreateBalanceRequestDto(CreateBalanceRequestDTO request) {
 
        return EmployeeData.builder()
-                .employeeId(this.parserUUID.parseUUIDFromGRPC(request.employeeId()))
-                .overtimeMinutesAccumulated(new BigDecimal(request.initialMinutes()))
+                .employeeId(request.employeeId())
+                .overtimeMinutesAccumulated(request.initialMinutes())
                 .build();
     }
 
     public BalanceDTO fromEmployeeDats(EmployeeData employeeData) {
 
         return new BalanceDTO(employeeData.getEmployeeId().toString(), employeeData.getOvertimeMinutesAccumulated());
+    }
+
+    public GetBalanceRequestDTO getBalanceRequest(GetBalanceRequest request) {
+
+        return new GetBalanceRequestDTO(this.parserUUID.parseUUIDFromGRPC(request.getEmployeeId()));
+    }
+
+    public CreateBalanceRequestDTO toCreateBalanceRequestDto(CreateBalanceRequest request) {
+
+        return new CreateBalanceRequestDTO(UUID.fromString(request.getEmployeeId()), new BigDecimal(request.getInitialMinutes()));
+    }
+
+    public UpdateBalanceRequestDTO toUpdateBalanceRequestDto(UpdateBalanceRequest request) {
+
+        return new UpdateBalanceRequestDTO(UUID.fromString(request.getEmployeeId()), new BigDecimal(request.getMinutesToChange()));
+    }
+
+    public DeleteBalanceRequestDTO toDeleteBalanceRequesDto(DeleteBalanceRequest request) {
+
+        return new DeleteBalanceRequestDTO(UUID.fromString(request.getEmployeeId()));
     }
 }

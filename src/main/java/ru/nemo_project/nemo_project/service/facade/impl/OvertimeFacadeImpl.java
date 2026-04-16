@@ -8,43 +8,40 @@ import ru.nemo_project.hr.grpc.DeleteBalanceRequest;
 import ru.nemo_project.hr.grpc.GetBalanceRequest;
 import ru.nemo_project.hr.grpc.UpdateBalanceRequest;
 import ru.nemo_project.nemo_project.domen.model.BalanceDTO;
+import ru.nemo_project.nemo_project.repository.OverTimeRepositoryDAO;
 import ru.nemo_project.nemo_project.service.facade.OvertimeFacade;
-import ru.nemo_project.nemo_project.util.Validator;
+import ru.nemo_project.nemo_project.util.Mapper;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class OvertimeFacadeImpl implements OvertimeFacade {
 
-    private final Validator validator;
+    private final Mapper mapper;
 
-    private final OvertimeFacade overtimeFacade;
-
+    private final OverTimeRepositoryDAO overTimeRepositoryDAO;
 
     @Override
     public BalanceDTO getBalance(GetBalanceRequest request) {
 
-        if (!this.validator.uuidValidator(request.getEmployeeId())) {
-            throw new IllegalArgumentException("");
-        }
-
-        var fromDB = this.overtimeFacade.getBalance(request);
-
-        return new BalanceDTO(null, null);
+        return this.overTimeRepositoryDAO.getBalance(this.mapper.getBalanceRequest(request));
     }
 
     @Override
-    public void createBalance(CreateBalanceRequest request) {
+    public BalanceDTO createBalance(CreateBalanceRequest request) {
 
+       return this.overTimeRepositoryDAO.createBalance(this.mapper.toCreateBalanceRequestDto(request));
     }
 
     @Override
-    public void updateBalance(UpdateBalanceRequest request) {
+    public BalanceDTO updateBalance(UpdateBalanceRequest request) {
 
+       return this.overTimeRepositoryDAO.updateBalance(this.mapper.toUpdateBalanceRequestDto(request));
     }
 
     @Override
-    public void deleteBalance(DeleteBalanceRequest request) {
+    public boolean deleteBalance(DeleteBalanceRequest request) {
 
+        return this.overTimeRepositoryDAO.deleteBalance(this.mapper.toDeleteBalanceRequesDto(request));
     }
 }
