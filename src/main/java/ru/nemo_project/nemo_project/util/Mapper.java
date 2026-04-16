@@ -14,7 +14,6 @@ import ru.nemo_project.nemo_project.domen.model.CreateBalanceRequestDTO;
 import ru.nemo_project.nemo_project.domen.model.DeleteBalanceRequestDTO;
 import ru.nemo_project.nemo_project.domen.model.GetBalanceRequestDTO;
 import ru.nemo_project.nemo_project.domen.model.UpdateBalanceRequestDTO;
-
 import java.math.BigDecimal;
 import java.util.UUID;
 
@@ -97,9 +96,9 @@ public class Mapper {
         return new GetBalanceRequestDTO(this.parserUUID.parseUUIDFromGRPC(request.getEmployeeId()));
     }
 
-    public CreateBalanceRequestDTO toCreateBalanceRequestDto(CreateBalanceRequest request) {
+    public CreateBalanceRequestDTO toCreateBalanceRequestDto(CreateBalanceRequest request, BigDecimal newBalance) {
 
-        return new CreateBalanceRequestDTO(UUID.fromString(request.getEmployeeId()), new BigDecimal(request.getInitialMinutes()));
+        return new CreateBalanceRequestDTO(UUID.fromString(request.getEmployeeId()), newBalance);
     }
 
     public UpdateBalanceRequestDTO toUpdateBalanceRequestDto(UpdateBalanceRequest request) {
